@@ -3,11 +3,16 @@ import React, { useEffect, useRef, useState } from 'react'
 const App = () => {
   const boardRef = useRef(null)
   const blocksRef = useRef([])
+
+  const snakeRef = useRef([{
+    x:1,y:3
+  },{x:1,y:4},{x:1,y:5}])
+
   const blockHeight = 80
   const blockWidth = 80
   const [cols, setCols] = useState(0)
   const [rows, setRows] = useState(0)
-
+  const [direction, setDirection] = useState("")
   const getIndex = (row,col) =>{
     return row * cols + col
   }
@@ -15,12 +20,8 @@ const App = () => {
   const getRow = (index)=> Math.floor(index / cols)
   const getCol = index => index % cols 
   
-  const snake = [{
-    x:1,y:3
-  },{x:1,y:4},{x:1,y:5}]
-  
   const renderSnake = ()=>{
-    snake.forEach(segment => {
+    snakeRef.current.forEach(segment => {
       const idx = getIndex(segment.x,segment.y)
       const block = blocksRef.current[idx]
       if (block) block.classList.add("fill")
@@ -28,6 +29,11 @@ const App = () => {
     })
   }
 
+  const clearBoard = ()=>{
+    blocksRef.current.forEach((elem)=>{
+      if (elem) elem.classList.remove("fill")
+    })
+  }
   useEffect(()=>{
     const board = boardRef.current
     if (board){
@@ -37,14 +43,49 @@ const App = () => {
   },[])
 
   useEffect(() => {
+      const handleKey = (e)=>{
+      const key = e.key
+
+      if (key == "ArrowUp") setDirection("up")
+      else if (key == "ArrowDown") setDirection("down")
+      else if (key == "ArrowLeft") setDirection("left")
+      else if (key == "ArrowRight") setDirection("right")
+    }
+  
+  window.addEventListener("keydown",handleKey)
+  
+  return ()=>window.removeEventListener("keydown",handleKey)  
+  }, [])
+  
+
+  useEffect(() => {
     blocksRef.current.forEach((block,index)=>{
       if (block) block.innerText = `${getRow(index)}- ${getCol(index)}`
-    })
-    renderSnake()
-  }, [rows,cols])
+    }) 
+    
+    const interval = setInterval(()=>{
+      clearBoard()
+      let head=null;
+      let snake = snakeRef.current
+      if (direction === 'left'){
+        head = {x:snake[0].x,y:snake[0].y - 1}
+      }else if (direction === 'right')
+      {
+        head = {x:snake[0].x,y:snake[0].y + 1}
+      }else if (direction === 'down')
+      {
+        head = {x:snake[0].x + 1,y:snake[0].y}
+      }else if (direction === 'up'){
+        head = {x:snake[0].x - 1,y:snake[0].y}
+      }
+      snake.unshift(head)
+      snake.pop()
+     renderSnake()
+    },400)
   
+    return () => clearInterval(interval)
+  }, [rows,cols,direction])
   
-   
   return (
     <section className='bg-slate-800 flex-col  w-full h-screen overflow-hidden text-white'>
       <div className="infos p-(--space-2xl) flex justify-between">
