@@ -4,6 +4,8 @@ const App = () => {
   const boardRef = useRef(null)
   const blocksRef = useRef([])
   const modalRef = useRef(null)
+  const startModalRef = useRef(null)
+  const gameOverModalRef = useRef(null)
 
   const snakeRef = useRef([{
     x:1,y:3
@@ -33,11 +35,10 @@ const App = () => {
   }
 
   const renderFood = ()=>{
-        let foodIndex = getIndex(food.x,food.y) 
-    blocksRef.current.forEach((block,index)=>{
-      if (block && index === foodIndex) block.classList.add("food")
-  })
-
+    if (!food.x && !food.y) return;
+    const foodIndex = getIndex(food.x,food.y) 
+    const block = blocksRef.current[foodIndex]
+    if (block) block.classList.add("food")
   }
 
 
@@ -86,7 +87,7 @@ const App = () => {
   useEffect(() => {
     let foodIndex = getIndex(food.x,food.y)
     blocksRef.current.forEach((block,index)=>{
-    if (block && index === foodIndex) block.classList.add("food")
+    // if (block && index === foodIndex) block.classList.add("food")
 
     if (block) block.innerText = `${getRow(index)}-${getCol(index)}`
   })
@@ -107,9 +108,12 @@ const App = () => {
         head = {x:snake[0].x - 1,y:snake[0].y}
       }
 
-      if (head.x <0 || head.x > rows || head.y < 0 || head.y > cols) {
+      if (head.x <0 || head.x >= rows || head.y < 0 || head.y >= cols) {
         clearInterval(interval)
         alert("Game Over")
+        modalRef.current.style.display ="flex"
+        startModalRef.current.classList.add("hidden")
+        gameOverModalRef.current.classList.remove("hidden")
         return 
       }
 
@@ -129,12 +133,27 @@ const App = () => {
   }, [rows,cols,direction])
 
   useEffect(() => {
-    if (rows>0 && cols >0)
-    {
-      generateFood()
-    }
+    if (rows>0 && cols >0) generateFood()
+    
   }, [rows,cols])
   
+  const restartGame = () => {
+    gameOverModalRef.current.classList.add("hidden");
+    modalRef.current.style.display = "none"
+    snakeRef.current.forEach(segment => {
+      const idx = getIndex(segment.x,segment.y)
+      const block = blocksRef.current[idx]
+      if (block) block.classList.remove("fill")
+  })
+    snakeRef.current = [
+      { x: 1, y: 3 },
+      { x: 1, y: 4 },
+      { x: 1, y: 5 },
+    ];
+    intervalId = setInterval(() => {
+      renderSnake();
+    }, 300);
+  };
   
   return (
     <>
@@ -170,12 +189,17 @@ const App = () => {
       </div>
     </section>
     <div ref={modalRef} className="modal h-screen w-full fixed top-0 text-white bg-[#35353587] backdrop-blur-[3px] flex justify-center items-center">
-      <div className="start-game flex flex-col justify-center gap-(--space-lg)">
+      <div ref={startModalRef} className="start-game flex flex-col justify-center gap-(--space-lg)">
         <h2 className='text-3xl '>Welcome to Snake Game</h2>
         <button onClick={()=>{
           modalRef.current.style.display = "none"
           intervalId = setInterval(()=>{renderSnake()},300)
         }} className='text-4xl border rounded-xl py-2 cursor-pointer hover:scale-110 active:scale-75 transition-all duration-300 ease-out ' >Start Game</button>
+      </div>
+      <div ref={gameOverModalRef} className="game-over flex flex-col justify-center gap-(--space-lg) hidden">
+        <h2 className='text-4xl text-center '>Game Over !!</h2>
+        <button onClick={()=>restartGame()} className='text-4xl border px-5 rounded-xl py-2 cursor-pointer hover:scale-110 active:scale-75 transition-all duration-300 ease-out '>Restart Game</button>
+
       </div>
     </div>
     </>
