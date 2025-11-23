@@ -3,15 +3,18 @@ import React, { useEffect, useRef, useState } from 'react'
 const App = () => {
   const boardRef = useRef(null)
   const blocksRef = useRef([])
+  const modalRef = useRef(null)
 
   const snakeRef = useRef([{
     x:1,y:3
   },{x:1,y:4},{x:1,y:5}])
 
+
   const blockHeight = 80
   const blockWidth = 80
   const [cols, setCols] = useState(0)
   const [rows, setRows] = useState(0)
+  const [food, setFood] = useState({})
   const [direction, setDirection] = useState("")
   const getIndex = (row,col) =>{
     return row * cols + col
@@ -19,19 +22,41 @@ const App = () => {
 
   const getRow = (index)=> Math.floor(index / cols)
   const getCol = index => index % cols 
-  
+
+  const generateFood = ()=>{
+    let foodIndex= Math.floor(Math.random() * rows * cols) 
+    setFood({
+    x: getRow(foodIndex),
+    y:getCol(foodIndex)
+  })
+  return foodIndex
+  }
+
+  const renderFood = ()=>{
+        let foodIndex = getIndex(food.x,food.y) 
+    blocksRef.current.forEach((block,index)=>{
+      if (block && index === foodIndex) block.classList.add("food")
+  })
+
+  }
+
+
   const renderSnake = ()=>{
     snakeRef.current.forEach(segment => {
       const idx = getIndex(segment.x,segment.y)
       const block = blocksRef.current[idx]
       if (block) block.classList.add("fill")
-      console.log(block)
+      if (block && idx === getIndex(food.x,food.y)) block.classList.add("food")
+      // console.log(block)
     })
   }
 
   const clearBoard = ()=>{
     blocksRef.current.forEach((elem)=>{
-      if (elem) elem.classList.remove("fill")
+      if (elem) {
+        elem.classList.remove("fill")
+        elem.classList.remove("food")
+      }
     })
   }
   useEffect(()=>{
@@ -59,9 +84,12 @@ const App = () => {
   
 
   useEffect(() => {
+    let foodIndex = getIndex(food.x,food.y)
     blocksRef.current.forEach((block,index)=>{
-      if (block) block.innerText = `${getRow(index)}- ${getCol(index)}`
-    }) 
+    if (block && index === foodIndex) block.classList.add("food")
+
+    if (block) block.innerText = `${getRow(index)}-${getCol(index)}`
+  })
     
     const interval = setInterval(()=>{
       clearBoard()
@@ -78,15 +106,38 @@ const App = () => {
       }else if (direction === 'up'){
         head = {x:snake[0].x - 1,y:snake[0].y}
       }
+
+      if (head.x <0 || head.x > rows || head.y < 0 || head.y > cols) {
+        clearInterval(interval)
+        alert("Game Over")
+        return 
+      }
+
+      if (head.x == food.x && head.y == food.y){
+        blocksRef.current[foodIndex].classList.remove("food")
+        generateFood()
+        snake.unshift(head)
+      }
+
       snake.unshift(head)
       snake.pop()
      renderSnake()
+     renderFood()
     },400)
   
     return () => clearInterval(interval)
   }, [rows,cols,direction])
+
+  useEffect(() => {
+    if (rows>0 && cols >0)
+    {
+      generateFood()
+    }
+  }, [rows,cols])
+  
   
   return (
+    <>
     <section className='bg-slate-800 flex-col  w-full h-screen overflow-hidden text-white'>
       <div className="infos p-(--space-2xl) flex justify-between">
         <div className="info border p-2  rounded-xl border-(--border-primary-color)">
@@ -118,6 +169,16 @@ const App = () => {
         </div>
       </div>
     </section>
+    <div ref={modalRef} className="modal h-screen w-full fixed top-0 text-white bg-[#35353587] backdrop-blur-[3px] flex justify-center items-center">
+      <div className="start-game flex flex-col justify-center gap-(--space-lg)">
+        <h2 className='text-3xl '>Welcome to Snake Game</h2>
+        <button onClick={()=>{
+          modalRef.current.style.display = "none"
+          intervalId = setInterval(()=>{renderSnake()},300)
+        }} className='text-4xl border rounded-xl py-2 cursor-pointer hover:scale-110 active:scale-75 transition-all duration-300 ease-out ' >Start Game</button>
+      </div>
+    </div>
+    </>
   )
 }
 

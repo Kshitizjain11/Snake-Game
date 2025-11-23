@@ -27,6 +27,9 @@ body{
 
 }
 
+.food{
+  background-color: #ff3b3c;
+}
 .fill {
   background-color: var(--bg-fill-color);
 }
