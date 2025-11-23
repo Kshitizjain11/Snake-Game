@@ -14,10 +14,16 @@ const App = () => {
 
   const blockHeight = 80
   const blockWidth = 80
+  
   const [cols, setCols] = useState(0)
   const [rows, setRows] = useState(0)
   const [food, setFood] = useState({})
   const [direction, setDirection] = useState("")
+  
+  const [highScore, setHighScore] = useState(localStorage.getItem("highScore") || 0)
+  const [score, setScore] = useState(0)
+
+  
   const getIndex = (row,col) =>{
     return row * cols + col
   }
@@ -121,6 +127,8 @@ const App = () => {
         blocksRef.current[foodIndex].classList.remove("food")
         generateFood()
         snake.unshift(head)
+        setScore((prev)=> prev + 10)
+        
       }
 
       snake.unshift(head)
@@ -138,6 +146,11 @@ const App = () => {
   }, [rows,cols])
   
   const restartGame = () => {
+    setScore(0)
+        if (highScore < score + 10) {
+          setHighScore(score)
+          localStorage.setItem("highScore",score)
+        }
     gameOverModalRef.current.classList.add("hidden");
     modalRef.current.style.display = "none"
     snakeRef.current.forEach(segment => {
@@ -161,12 +174,12 @@ const App = () => {
       <div className="infos p-(--space-2xl) flex justify-between">
         <div className="info border p-2  rounded-xl border-(--border-primary-color)">
           <h3 className='text-lg'>High Score:
-            <span className='high-score' >0</span>
+            <span className='high-score' >{highScore}</span>
           </h3>
         </div>
         <div className="info border p-2  rounded-xl border-(--border-primary-color)">
           <h3 className='text-lg'>Score:
-            <span className='high-score' >0</span>
+            <span className='high-score' >{score}</span>
           </h3>
         </div>
         <div className="info border p-2  rounded-xl border-(--border-primary-color)">
